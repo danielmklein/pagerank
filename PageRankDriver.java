@@ -42,6 +42,8 @@
 **/
 
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.*;
 
 import java.text.NumberFormat;
@@ -159,8 +161,8 @@ public class PageRankDriver extends Configured implements Tool {
         while (line != null)
         {
           // pull out the outlink and add it to the proper node
-          fromNodeId = line.split("\\s+").trim();
-          toNodeId = line.split("\\s+").trim();
+          fromNodeId = line.split("\\s+")[0].trim();
+          toNodeId = line.split("\\s+")[1].trim();
 
           if (nodes.get(fromNodeId) == null)
           { // if fromNode not in table already, add it and add the outlink
