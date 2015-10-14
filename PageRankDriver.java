@@ -47,7 +47,8 @@ import java.util.*;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.FloatWritable;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -63,7 +64,7 @@ import org.apache.hadoop.util.ToolRunner;
 // so main() should just call run().
 public class PageRankDriver extends Configured implements Tool {
 
-    public static void main(String[] args) throws Exception {
+    /*public static void main(String[] args) throws Exception {
       JobConf conf = new JobConf(PageRank.class);
       conf.setJobName("PageRank");
       conf.setOutputKeyClass(Text.class);
@@ -92,49 +93,69 @@ public class PageRankDriver extends Configured implements Tool {
       //FileInputFormat.setInputPaths(conf, new Path(args[0]));
       FileOutputFormat.setOutputPath(conf, new Path(args[1]));
       JobClient.runJob(conf);
-    }
+    }*/
 
     public static void main(String[] args) throws Exception {
-        System.exit(ToolRunner.run(new Configuration(), new WikiPageRanking(), args));
+        System.exit(ToolRunner.run(new Configuration(), new PageRankDriver(), args));
     }
 
     @Override
     public int run(String[] args) throws Exception {
-        boolean isCompleted = runXmlParsing("wiki/in", "wiki/ranking/iter00");
-        if (!isCompleted) return 1;
-
+        boolean isCompleted;
         String lastResultPath = null;
 
-        for (int runs = 0; runs < 5; runs++) {
-            String inPath = "wiki/ranking/iter" + nf.format(runs);
-            lastResultPath = "wiki/ranking/iter" + nf.format(runs + 1);
+        prepareInputFile();
 
-            isCompleted = runRankCalculation(inPath, lastResultPath);
+        // TODO: num iterations should go in this loop
+        for (int runs = 0; runs < 0; runs++) {
+            String inPath = "pagerank/input/iter" + nf.format(runs);
+            lastResultPath = "pagerank/input/iter" + nf.format(runs + 1);
+
+            isCompleted = calculate(inPath, lastResultPath);
 
             if (!isCompleted) return 1;
         }
 
-        isCompleted = runRankOrdering(lastResultPath, "wiki/result");
-
-        if (!isCompleted) return 1;
         return 0;
     }
 
-    private boolean runRankCalculation(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException {
+    private void prepareInputFile()
+    {
+      Configuration config = new Configuration();
+      config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
+      config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
+      FileSystem fs = FileSystem.get(config);
+
+      Path filenamePath = new Path("/pagerank/test.txt");
+      try
+      {
+          if (fs.exists(filenamePath))
+          {
+              fs.delete(filenamePath, true);
+          }
+
+      FSDataOutputStream fin = fs.create(filenamePath);
+      fin.writeUTF("hello");
+      fin.close();
+    }
+
+    private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException {
       Configuration conf = new Configuration();
 
-      Job rankCalculator = Job.getInstance(conf, "rankCalculator");
-      rankCalculator.setJarByClass(WikiPageRanking.class);
+      Job pageRank = Job.getInstance(conf, "PageRank");
+      pageRank.setJarByClass(PageRankDriver.class);
 
-      rankCalculator.setOutputKeyClass(Text.class);
-      rankCalculator.setOutputValueClass(Text.class);
+      pageRank.setInputFormatClass(TextInputFormat.class)
+      pageRank.setOutputKeyClass(Text.class);
+      pageRank.setOutputValueClass(LongWritable.class);
+      pageRank.setOutputFormatClass(TextOutputFormat.class)
 
-      FileInputFormat.setInputPaths(rankCalculator, new Path(inputPath));
-      FileOutputFormat.setOutputPath(rankCalculator, new Path(outputPath));
+      FileInputFormat.setInputPaths(pageRank, new Path(inputPath));
+      FileOutputFormat.setOutputPath(pageRank, new Path(outputPath));
 
-      rankCalculator.setMapperClass(RankCalculateMapper.class);
-      rankCalculator.setReducerClass(RankCalculateReduce.class);
+      pageRank.setMapperClass(PageRankMapper.class);
+      pageRank.setReducerClass(PageRankReduce.class);
 
-      return rankCalculator.waitForCompletion(true);
+      return pageRank.waitForCompletion(true);
   }
 }
