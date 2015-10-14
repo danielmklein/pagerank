@@ -22,7 +22,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, LongWritabl
 
   @Override
   public void map(LongWritable key, Text value,
-                  OutputCollector<Text, LongWritable> output) throws IOException {
+                  Context context) throws IOException {
     String line = value.toString();
     List<String> fields = line.split();
     String curNid = fields[0];
@@ -32,7 +32,8 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, LongWritabl
     for (String outlinkId : fields.subList(2, fields.size() - 1))
     {
       word.set(outlinkId);
-      output.collect(word, new LongWritable(portion));
+      //output.collect(word, new LongWritable(portion));
+      context.write(word, new LongWritable(portion))
     }
     // parse nid, init_pagerank, and outlinks from line
     // for nid in outlinks:

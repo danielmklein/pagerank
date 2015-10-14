@@ -21,11 +21,11 @@ public class PageRankReduce extends Reducer<Text, LongWritable, Text, LongWritab
 
   @Override
   public void reduce(Text key, Iterator<LongWritable> values,
-                     OutputCollector<Text, LongWritable> output) throws IOException {
+                     Context context) throws IOException {
     long sum = 0;
     while (values.hasNext()) {
       sum += values.next().get();
     }
-    output.collect(key, new LongWritable(sum));
+    context.write(key, new LongWritable(sum));
   }
 }
