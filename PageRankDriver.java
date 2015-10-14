@@ -133,22 +133,26 @@ public class PageRankDriver extends Configured implements Tool {
           {
               fs.delete(filenamePath, true);
           }
+      } catch(Exception e){
+          System.out.println("File not found");
+      }
 
       FSDataOutputStream fin = fs.create(filenamePath);
       fin.writeUTF("hello");
       fin.close();
     }
 
-    private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException {
+    private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
+    {
       Configuration conf = new Configuration();
 
       Job pageRank = Job.getInstance(conf, "PageRank");
       pageRank.setJarByClass(PageRankDriver.class);
 
-      pageRank.setInputFormatClass(TextInputFormat.class)
+      pageRank.setInputFormatClass(TextInputFormat.class);
       pageRank.setOutputKeyClass(Text.class);
       pageRank.setOutputValueClass(LongWritable.class);
-      pageRank.setOutputFormatClass(TextOutputFormat.class)
+      pageRank.setOutputFormatClass(TextOutputFormat.class);
 
       FileInputFormat.setInputPaths(pageRank, new Path(inputPath));
       FileOutputFormat.setOutputPath(pageRank, new Path(outputPath));
