@@ -33,7 +33,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, LongWritabl
     {
       word.set(outlinkId);
       //output.collect(word, new LongWritable(portion));
-      context.write(word, new LongWritable(portion))
+      context.write(word, new LongWritable(portion));
     }
     // parse nid, init_pagerank, and outlinks from line
     // for nid in outlinks:
