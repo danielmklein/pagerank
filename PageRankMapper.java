@@ -22,7 +22,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, LongWritabl
 
   @Override
   public void map(LongWritable key, Text value,
-                  Context context) throws IOException {
+                  Context context) throws IOException, InterruptedException {
     String line = value.toString();
     List<String> fields = Arrays.asList(line.split(" "));
     String curNid = fields.get(0);

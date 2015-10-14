@@ -20,8 +20,8 @@ import org.apache.hadoop.mapreduce.Reducer;
 public class PageRankReduce extends Reducer<Text, LongWritable, Text, LongWritable> {
 
   @Override
-  public void reduce(Text key, Iterator<LongWritable> values,
-                     Context context) throws IOException {
+  public void reduce(Text key, Iterable<LongWritable> values,
+                     Context context) throws IOException, InterruptedException {
     long sum = 0;
     while (values.hasNext()) {
       sum += values.next().get();
