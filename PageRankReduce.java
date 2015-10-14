@@ -14,10 +14,13 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.mapreduce.Reducer;
 
-public static class PageRankReduce extends MapReduceBase
+
+public class PageRankReduce extends MapReduceBase
   implements Reducer<Text, LongWritable, Text, LongWritable> {
 
+  @Override
   public void reduce(Text key, Iterator<LongWritable> values,
                      OutputCollector<Text, LongWritable> output,
                      Reporter reporter) throws IOException {

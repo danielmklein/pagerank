@@ -14,15 +14,16 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.hadoop.mapreduce.Mapper;
 
-public static class PageRankMapper extends MapReduceBase
+public class PageRankMapper extends MapReduceBase
   implements Mapper<LongWritable, Text, Text, LongWritable> {
 
   private Text word = new Text();
 
+  @Override
   public void map(LongWritable key, Text value,
-                  OutputCollector<Text, LongWritable> output,
-                  Reporter reporter) throws IOException {
+                  OutputCollector<Text, LongWritable> output) throws IOException {
     String line = value.toString();
     List<String> fields = line.split();
     String curNid = fields[0];

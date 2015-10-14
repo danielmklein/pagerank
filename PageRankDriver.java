@@ -44,10 +44,14 @@
 import java.io.IOException;
 import java.util.*;
 
+import java.text.NumberFormat;
+import java.text.DecimalFormat;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -94,6 +98,8 @@ public class PageRankDriver extends Configured implements Tool {
       FileOutputFormat.setOutputPath(conf, new Path(args[1]));
       JobClient.runJob(conf);
     }*/
+    private static NumberFormat nf = new DecimalFormat("00");
+
 
     public static void main(String[] args) throws Exception {
         System.exit(ToolRunner.run(new Configuration(), new PageRankDriver(), args));
