@@ -125,7 +125,7 @@ public class PageRankDriver extends Configured implements Tool {
         return 0;
     }
 
-    private void prepareInputFile()
+    private void prepareInputFile() throws Exception, IOException
     {
       Configuration config = new Configuration();
       config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));

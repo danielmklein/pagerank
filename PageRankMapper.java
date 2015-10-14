@@ -24,9 +24,9 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, LongWritabl
   public void map(LongWritable key, Text value,
                   Context context) throws IOException {
     String line = value.toString();
-    List<String> fields = line.split();
-    String curNid = fields[0];
-    Long initPageRank = Long.parseLong(fields[1]);
+    List<String> fields = Arrays.asList(line.split(" "));
+    String curNid = fields.get(0);
+    Long initPageRank = Long.parseLong(fields.get(1));
     Long portion = initPageRank / (fields.size() - 2);
 
     for (String outlinkId : fields.subList(2, fields.size() - 1))
