@@ -103,6 +103,7 @@ public class PageRankDriver extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         System.exit(ToolRunner.run(new Configuration(), new PageRankDriver(), args));
+        // TODO: we could specify the exact input file as an arg...
     }
 
     @Override
@@ -130,22 +131,57 @@ public class PageRankDriver extends Configured implements Tool {
       Configuration config = new Configuration();
       config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
       config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
-      FileSystem fs = FileSystem.get(config);
-
-      Path filenamePath = new Path("/pagerank/test.txt");
       try
       {
-          if (fs.exists(filenamePath))
-          {
-              fs.delete(filenamePath, true);
+        // TODO: read /pagerank/graph.txt, construct hashmap of nid:node pairs,
+        // then write it to /pagerank/input/iter00
+        FileSystem fs = FileSystem.get(config);
+        Path path = new Path("/pagerank/graph.txt");
+        BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
+        Map<String, List<String> nodes = new HashMap<String, List<String>();
+        String line;
+
+        line = br.readLine();
+        // pull out num nodes and num edges
+        Integer numNodes = Integer.parseInt(line.split("\\s+")[0]);
+        System.out.println("Number of nodes is: " + numNodes);
+        Integer numEdges = Integer.parseInt(line.split("\\s+")[1]);
+        System.out.println("Number of edges is: " + numEdges);
+
+        line = br.readLine();
+        // pull out num iterations to run
+        Integer numIterations = Integer.parseInt(line.trim());
+        System.out.println("Number of iterations is: " + numIterations);
+
+        line = br.readLine();
+        String fromNodeId;
+        String toNodeId;
+        while (line != null)
+        {
+          // pull out the outlink and add it to the proper node
+          fromNodeId = line.split("\\s+").trim();
+          toNodeId = line.split("\\s+").trim();
+
+          if (nodes.get(fromNodeId) == null)
+          { // if fromNode not in table already, add it and add the outlink
+            System.out.println("Adding node " + fromNodeId + " to table.");
+            nodes.put(fromNodeId, new ArrayList<String>());
+            System.out.println("Adding link from " + fromNodeId + " to " + toNodeid + " to the table.");
+            nodes.get(fromNodeId).add(toNodeId);
+          } else
+          { // otherwise, just add toNodeId to the outlinks of fromNodeId
+            nodes.get(fromNodeId).add(toNodeId);
           }
-      } catch(Exception e){
-          System.out.println("File not found");
+
+          line = br.readLine();
+        }
+      }
+      catch (Exception e)
+      {
+        //
       }
 
-      FSDataOutputStream fin = fs.create(filenamePath);
-      fin.writeUTF("hello");
-      fin.close();
+      // TODO: might need to return the num nodes, num edges, and num iterations.
     }
 
     private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
@@ -168,4 +204,5 @@ public class PageRankDriver extends Configured implements Tool {
 
       return pageRank.waitForCompletion(true);
   }
+
 }
