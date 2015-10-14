@@ -17,13 +17,11 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.mapreduce.Reducer;
 
 
-public class PageRankReduce extends MapReduceBase
-  implements Reducer<Text, LongWritable, Text, LongWritable> {
+public class PageRankReduce extends Reducer<Text, LongWritable, Text, LongWritable> {
 
   @Override
   public void reduce(Text key, Iterator<LongWritable> values,
-                     OutputCollector<Text, LongWritable> output,
-                     Reporter reporter) throws IOException {
+                     OutputCollector<Text, LongWritable> output) throws IOException {
     long sum = 0;
     while (values.hasNext()) {
       sum += values.next().get();

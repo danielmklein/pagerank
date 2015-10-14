@@ -16,8 +16,7 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class PageRankMapper extends MapReduceBase
-  implements Mapper<LongWritable, Text, Text, LongWritable> {
+public class PageRankMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
 
   private Text word = new Text();
 
@@ -38,11 +37,5 @@ public class PageRankMapper extends MapReduceBase
     // parse nid, init_pagerank, and outlinks from line
     // for nid in outlinks:
     //    emit(nid, init_pagerank/len(outlinks))
-
-    StringTokenizer itr = new StringTokenizer(line);
-    while (itr.hasMoreTokens()) {
-      word.set(itr.nextToken());
-      output.collect(word, one);
-    }
   }
 }
