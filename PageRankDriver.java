@@ -138,7 +138,7 @@ public class PageRankDriver extends Configured implements Tool {
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/graph.txt");
         BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-        Map<String, List<String> nodes = new HashMap<String, List<String>();
+        Map<String, List<String>> nodes = new HashMap<String, List<String>>();
         String line;
 
         line = br.readLine();
