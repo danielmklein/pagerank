@@ -135,9 +135,9 @@ public class PageRankDriver extends Configured implements Tool {
       Configuration config = new Configuration();
       config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
       config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
-      Integer numNodes;
-      Integer numEdges;
-      Integer numIterations;
+      Integer numNodes = 0;
+      Integer numEdges = 0;
+      Integer numIterations = 0;
       String fromNodeId;
       String toNodeId;
       Map<String, List<String>> nodes;
