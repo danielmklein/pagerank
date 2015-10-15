@@ -163,8 +163,6 @@ public class PageRankDriver extends Configured implements Tool {
         System.out.println("Number of iterations is: " + numIterations);
 
         line = br.readLine();
-        fromNodeId;
-        toNodeId;
         while (line != null)
         {
           // pull out the outlink and add it to the proper node
