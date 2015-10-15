@@ -140,13 +140,14 @@ public class PageRankDriver extends Configured implements Tool {
       String toNodeId;
       Map<String, List<String>> nodes;
 
+      BufferedReader br = null;
       try
       {
         // TODO: read /pagerank/graph.txt, construct hashmap of nid:node pairs,
         // then write it to /pagerank/input/iter00
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/graph.txt");
-        BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
+        br = new BufferedReader(new InputStreamReader(fs.open(path)));
         nodes = new HashMap<String, List<String>>();
         String line;
 
@@ -188,7 +189,16 @@ public class PageRankDriver extends Configured implements Tool {
         //
       } finally
       {
-        br.close();
+        try
+        {
+          if (br != null)
+          {
+            br.close();
+          }
+        } catch (IOException e)
+        {
+          //
+        }
       }
 
       for (String nodeId : nodes.keySet())
@@ -204,7 +214,7 @@ public class PageRankDriver extends Configured implements Tool {
       {
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/input/iter00");
-        BufferedReader br = new BufferedReader(new OutputStreamWriter(fs.create(path, true)));
+        br = new BufferedReader(new OutputStreamWriter(fs.create(path, true)));
         String line;
         Float initValue = 1.0 / numNodes;
         // TODO: build line containing nid init_rank and outlinks
@@ -232,7 +242,16 @@ public class PageRankDriver extends Configured implements Tool {
         //
       } finally
       {
-        br.close();
+        try
+        {
+          if (br != null)
+          {
+            br.close();
+          }
+        } catch (IOException e)
+        {
+          //
+        }
       }
 
       // TODO: might need to return the num nodes, num edges, and num iterations??
