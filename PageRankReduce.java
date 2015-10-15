@@ -5,7 +5,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -17,16 +17,16 @@ import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.mapreduce.Reducer;
 
 
-public class PageRankReduce extends Reducer<Text, LongWritable, Text, LongWritable> {
+public class PageRankReduce extends Reducer<Text, FloatWritable, Text, FloatWritable> {
 
   @Override
-  public void reduce(Text key, Iterable<LongWritable> values,
+  public void reduce(Text key, Iterable<FloatWritable> values,
                      Context context) throws IOException, InterruptedException {
     long sum = 0;
-    for (LongWritable value : values)
+    for (FloatWritable value : values)
     {
       sum += value.get();
     }
-    context.write(key, new LongWritable(sum));
+    context.write(key, new FloatWritable(sum));
   }
 }

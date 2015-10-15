@@ -54,7 +54,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.FloatWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -133,6 +133,13 @@ public class PageRankDriver extends Configured implements Tool {
       Configuration config = new Configuration();
       config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
       config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
+      Integer numNodes;
+      Integer numEdges;
+      Integer numIterations;
+      String fromNodeId;
+      String toNodeId;
+      Map<String, List<String>> nodes;
+
       try
       {
         // TODO: read /pagerank/graph.txt, construct hashmap of nid:node pairs,
@@ -140,24 +147,24 @@ public class PageRankDriver extends Configured implements Tool {
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/graph.txt");
         BufferedReader br = new BufferedReader(new InputStreamReader(fs.open(path)));
-        Map<String, List<String>> nodes = new HashMap<String, List<String>>();
+        nodes = new HashMap<String, List<String>>();
         String line;
 
         line = br.readLine();
         // pull out num nodes and num edges
-        Integer numNodes = Integer.parseInt(line.split("\\s+")[0]);
+        numNodes = Integer.parseInt(line.split("\\s+")[0]);
         System.out.println("Number of nodes is: " + numNodes);
-        Integer numEdges = Integer.parseInt(line.split("\\s+")[1]);
+        numEdges = Integer.parseInt(line.split("\\s+")[1]);
         System.out.println("Number of edges is: " + numEdges);
 
         line = br.readLine();
         // pull out num iterations to run
-        Integer numIterations = Integer.parseInt(line.trim());
+        numIterations = Integer.parseInt(line.trim());
         System.out.println("Number of iterations is: " + numIterations);
 
         line = br.readLine();
-        String fromNodeId;
-        String toNodeId;
+        fromNodeId;
+        toNodeId;
         while (line != null)
         {
           // pull out the outlink and add it to the proper node
@@ -181,9 +188,56 @@ public class PageRankDriver extends Configured implements Tool {
       catch (Exception e)
       {
         //
+      } finally
+      {
+        br.close();
       }
 
-      // TODO: might need to return the num nodes, num edges, and num iterations.
+      for (String nodeId : nodes.keySet())
+      {
+        System.out.println("Node " + nodeId + " has outlinks to: ");
+        for (String neighbor : nodes.get(nodeId))
+        {
+          System.out.println("\t--" + neighbor);
+        }
+      }
+
+      try
+      {
+        FileSystem fs = FileSystem.get(config);
+        Path path = new Path("/pagerank/input/iter00");
+        BufferedReader br = new BufferedReader(new OutputStreamWriter(fs.create(path, true)));
+        String line;
+        Float initValue = 1.0 / numNodes;
+        // TODO: build line containing nid init_rank and outlinks
+        StringBuilder sb;
+
+        for (String nodeId : nodes.keySet())
+        {
+          sb = new StringBuilder();
+          sb.append(nodeId);
+          sb.append(" ");
+          sb.append(initValue);
+          sb.append(" ");
+          for (String outlinkId : nodes.get(nodeId))
+          {
+            sb.append(outlinkId);
+            sb.append(" ");
+          }
+          sb.append("\n");
+          System.out.println("Writing line: " + sb.toString());
+          br.write(sb.toString());
+        }
+
+      } catch (Exception e)
+      {
+        //
+      } finally
+      {
+        br.close();
+      }
+
+      // TODO: might need to return the num nodes, num edges, and num iterations??
     }
 
     private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
@@ -195,7 +249,7 @@ public class PageRankDriver extends Configured implements Tool {
 
       pageRank.setInputFormatClass(TextInputFormat.class);
       pageRank.setOutputKeyClass(Text.class);
-      pageRank.setOutputValueClass(LongWritable.class);
+      pageRank.setOutputValueClass(FloatWritable.class);
       pageRank.setOutputFormatClass(TextOutputFormat.class);
 
       FileInputFormat.setInputPaths(pageRank, new Path(inputPath));
