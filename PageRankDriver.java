@@ -44,6 +44,8 @@
 import java.io.IOException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.BufferedWriter;
+import java.io.OutputStreamWriter;
 import java.util.*;
 
 import java.text.NumberFormat;
@@ -210,13 +212,14 @@ public class PageRankDriver extends Configured implements Tool {
         }
       }
 
+      BufferedWriter bw = null;
       try
       {
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/input/iter00");
-        br = new BufferedReader(new OutputStreamWriter(fs.create(path, true)));
+        bw = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)));
         String line;
-        Float initValue = 1.0 / numNodes;
+        Float initValue = (new Float(1)) / (new Float(numNodes));
         // TODO: build line containing nid init_rank and outlinks
         StringBuilder sb;
 
@@ -234,7 +237,7 @@ public class PageRankDriver extends Configured implements Tool {
           }
           sb.append("\n");
           System.out.println("Writing line: " + sb.toString());
-          br.write(sb.toString());
+          bw.write(sb.toString());
         }
 
       } catch (Exception e)
@@ -244,9 +247,9 @@ public class PageRankDriver extends Configured implements Tool {
       {
         try
         {
-          if (br != null)
+          if (bw != null)
           {
-            br.close();
+            bw.close();
           }
         } catch (IOException e)
         {
