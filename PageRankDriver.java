@@ -168,7 +168,7 @@ public class PageRankDriver extends Configured implements Tool {
           { // if fromNode not in table already, add it and add the outlink
             System.out.println("Adding node " + fromNodeId + " to table.");
             nodes.put(fromNodeId, new ArrayList<String>());
-            System.out.println("Adding link from " + fromNodeId + " to " + toNodeid + " to the table.");
+            System.out.println("Adding link from " + fromNodeId + " to " + toNodeId + " to the table.");
             nodes.get(fromNodeId).add(toNodeId);
           } else
           { // otherwise, just add toNodeId to the outlinks of fromNodeId
