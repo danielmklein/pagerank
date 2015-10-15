@@ -140,7 +140,7 @@ public class PageRankDriver extends Configured implements Tool {
       Integer numIterations = 0;
       String fromNodeId;
       String toNodeId;
-      Map<String, List<String>> nodes;
+      Map<String, List<String>> nodes = new HashMap<String, List<String>>();
 
       BufferedReader br = null;
       try
@@ -150,7 +150,7 @@ public class PageRankDriver extends Configured implements Tool {
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/graph.txt");
         br = new BufferedReader(new InputStreamReader(fs.open(path)));
-        nodes = new HashMap<String, List<String>>();
+
         String line;
 
         line = br.readLine();
