@@ -269,7 +269,7 @@ public class PageRankDriver extends Configured implements Tool {
       pageRank.setJarByClass(PageRankDriver.class);
 
       pageRank.setInputFormatClass(NLineInputFormat.class);
-      job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 1);
+      pageRank.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 1);
       pageRank.setOutputKeyClass(Text.class);
       pageRank.setOutputValueClass(FloatWritable.class);
       pageRank.setOutputFormatClass(TextOutputFormat.class);
