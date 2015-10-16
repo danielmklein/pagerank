@@ -36,6 +36,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, FloatWritab
     for (String outlinkId : fields.subList(2, fields.size()))
     {
       System.out.println(outlinkId);
+      System.out.println("MAPPER: sending " + portion + " to " + outlinkId);
       word.set(outlinkId);
       //output.collect(word, new FloatWritable(portion));
       context.write(word, new FloatWritable(portion));
