@@ -124,8 +124,8 @@ public class PageRankDriver extends Configured implements Tool {
         int numRuns = 1;
         for (int curRun = 0; curRun < numRuns; curRun++) {
             System.out.println("Executing iteration " + curRun + " of " + numRuns);
-            String inPath = "pagerank/input/iter" + nf.format(curRun);
-            lastResultPath = "pagerank/input/iter" + nf.format(curRun + 1);
+            String inPath = "/pagerank/input/iter" + nf.format(curRun);
+            lastResultPath = "/pagerank/input/iter" + nf.format(curRun + 1);
 
             isCompleted = calculate(inPath, lastResultPath);
 
