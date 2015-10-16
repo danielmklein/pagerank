@@ -23,7 +23,7 @@ public class PageRankReduce extends Reducer<Text, FloatWritable, Text, FloatWrit
   public void reduce(Text key, Iterable<FloatWritable> values,
                      Context context) throws IOException, InterruptedException {
     System.out.println("REDUCER: found following portions for node " + key);
-    long sum = 0;
+    Float sum = new Float(0);
     for (FloatWritable value : values)
     {
       System.out.println(value);

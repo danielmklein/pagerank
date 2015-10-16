@@ -33,7 +33,7 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, FloatWritab
     System.out.println("MAPPER: node " + curNid + " has current value " + initPageRank);
     System.out.println("MAPPER: node " + curNid + " has neighbors: ");
 
-    for (String outlinkId : fields.subList(2, fields.size() - 1))
+    for (String outlinkId : fields.subList(2, fields.size()))
     {
       System.out.println(outlinkId);
       word.set(outlinkId);
