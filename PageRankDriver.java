@@ -119,13 +119,19 @@ public class PageRankDriver extends Configured implements Tool {
         prepareInputFile();
 
         // TODO: num iterations should go in this loop
-        for (int runs = 0; runs < 1; runs++) {
-            String inPath = "pagerank/input/iter" + nf.format(runs);
-            lastResultPath = "pagerank/input/iter" + nf.format(runs + 1);
+        int numRuns = 1;
+        for (int curRun = 0; curRun < 1; curRun++) {
+            System.out.println("Executing iteration " + curRun + " of " + numRuns);
+            String inPath = "pagerank/input/iter" + nf.format(curRun);
+            lastResultPath = "pagerank/input/iter" + nf.format(curRun + 1);
 
             isCompleted = calculate(inPath, lastResultPath);
 
-            if (!isCompleted) return 1;
+            if (!isCompleted)
+            {
+              System.out.println("something broke.");
+              return 1;
+            }
         }
 
         return 0;
