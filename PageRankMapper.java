@@ -30,8 +30,12 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, FloatWritab
     Float initPageRank = Float.parseFloat(fields.get(1));
     Float portion = initPageRank / (new Float(fields.size() - 2));
 
+    System.out.println("MAPPER: node " + curNid + " has current value " + initPageRank);
+    System.out.println("MAPPER: node " + curNid + " has neighbors: ");
+
     for (String outlinkId : fields.subList(2, fields.size() - 1))
     {
+      System.out.println(outlinkId);
       word.set(outlinkId);
       //output.collect(word, new FloatWritable(portion));
       context.write(word, new FloatWritable(portion));
