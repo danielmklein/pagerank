@@ -16,18 +16,18 @@ import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.apache.hadoop.mapreduce.Mapper;
 
-public class PageRankMapper extends Mapper<FloatWritable, Text, Text, FloatWritable> {
+public class PageRankMapper extends Mapper<LongWritable, Text, Text, FloatWritable> {
 
   private Text word = new Text();
 
   @Override
-  public void map(FloatWritable key, Text value,
+  public void map(LongWritable key, Text value,
                   Context context) throws IOException, InterruptedException {
     String line = value.toString();
     List<String> fields = Arrays.asList(line.split("\\s+"));
     String curNid = fields.get(0);
-    Long initPageRank = Long.parseLong(fields.get(1));
-    Long portion = initPageRank / (fields.size() - 2);
+    Float initPageRank = Float.parseFloat(fields.get(1));
+    Float portion = initPageRank / (new Float(fields.size() - 2));
 
     for (String outlinkId : fields.subList(2, fields.size() - 1))
     {

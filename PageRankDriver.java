@@ -61,6 +61,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.TextInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.NLineInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
@@ -118,7 +119,7 @@ public class PageRankDriver extends Configured implements Tool {
         prepareInputFile();
 
         // TODO: num iterations should go in this loop
-        for (int runs = 0; runs < 0; runs++) {
+        for (int runs = 0; runs < 1; runs++) {
             String inPath = "pagerank/input/iter" + nf.format(runs);
             lastResultPath = "pagerank/input/iter" + nf.format(runs + 1);
 
@@ -267,7 +268,8 @@ public class PageRankDriver extends Configured implements Tool {
       Job pageRank = Job.getInstance(conf, "PageRank");
       pageRank.setJarByClass(PageRankDriver.class);
 
-      pageRank.setInputFormatClass(TextInputFormat.class);
+      pageRank.setInputFormatClass(NLineInputFormat.class);
+      job.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 1);
       pageRank.setOutputKeyClass(Text.class);
       pageRank.setOutputValueClass(FloatWritable.class);
       pageRank.setOutputFormatClass(TextOutputFormat.class);
