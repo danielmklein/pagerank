@@ -1,44 +1,11 @@
 /*
-/  TODO:
-/   -- write driver
-      -- see https://github.com/abij/hadoop-wiki-pageranking/blob/master/src/com/xebia/sandbox/hadoop/WikiPageRanking.java
-      -- driver needs to parse graph.txt and construct initial input file into mapreduce
-      -- each intermediate result should be written to its own file
-    -- write mapper
-      -- see https://github.com/abij/hadoop-wiki-pageranking/blob/master/src/com/xebia/sandbox/hadoop/job2/calculate/RankCalculateMapper.java
-
-    -- write reducer
-      -- see https://github.com/abij/hadoop-wiki-pageranking/blob/master/src/com/xebia/sandbox/hadoop/job2/calculate/RankCalculateReduce.java
-**/
-
-/*
-/ mapper gets node_id, cur_pagerank_val, and outlink_list.
-/ for each nid in outlink_list:
-/    emit(nid, cur_pagerank_val/len(outlink_list))
-/
-////////////////////////////////////////////////////////
-/
-/ each reducer gets list of pagerank_vals for given nid
-/ emit(nid, sum(pagerank_vals))
-/
-////////////////////////////////////////////////////////
-/
-/ do i really need to emit the graph structure?
-/ can't the driver take care of that?
-/
-////////////////////////////////////////////////////////
-/
-/ so, my driver needs to initially build an input file
-/ containing lines of data such as:
-/ "nid init_pagerank outlink1 outlink2 outlink3 ... outlinkn"
-////////////////////////////////////////////////////////
-/
 / building and running:
-/  $ mkdir Gender_classes
-/ $ javac -classpath ${HADOOP_HOME}/hadoop-${HADOOP_VERSION}-core.jar -d PageRank_classes PageRank.java
-/ $ jar -cvf /home/hadoop/PageRank.jar -C PageRank_classes/ .
+/ $ HADOOP_CLASSPATH="${hadoop classpath}"
+/ $ mkdir pagerank_classes
+/ $ javac -classpath ${HADOOP_CLASSPATH} -d pagerank_classes *.java
+/ $ jar -cvf /home/hadoop/PageRank.jar -C pagerank_classes/ .
 /
-/ $ hadoop PageRank.jar PageRank input_path output_path
+/ $ hadoop ./PageRank.jar PageRankDriver
 **/
 
 import java.io.IOException;
@@ -67,44 +34,14 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
-// TODO: move mapper and reducer to their own classes,
-// add run() method to this class, following example of
-// github pagerank (so this class should extend Tool or whatever.)
-// so main() should just call run().
 public class PageRankDriver extends Configured implements Tool {
 
-    /*public static void main(String[] args) throws Exception {
-      JobConf conf = new JobConf(PageRank.class);
-      conf.setJobName("PageRank");
-      conf.setOutputKeyClass(Text.class);
-      conf.setOutputValueClass(LongWritable.class);
-      conf.setInputFormat(TextInputFormat.class);
-      conf.setOutputFormat(TextOutputFormat.class);
-      conf.setMapperClass(Map.class);
-
-      if (args.length != 2) {
-          System.out.println("Usage:");
-          System.out.println("/path/to/input/files /path/to/output");
-          System.exit(1);
-      }
-
-      String graphDefPath = args[0];
-      // TODO: open graphDefPath
-      // read num nodes
-      // initialize list of nodes
-      // read num edges?
-      // for adjacency in the rest of file:
-      //    add adjacent node id to list for node
-      // finally, write each nid, init pagerank, and adj list to input file.
-
-      String inputPath = "/pagerank/init_input.data";
-      FileInputFormat.setInputPaths(conf, new Path(inputPath));
-      //FileInputFormat.setInputPaths(conf, new Path(args[0]));
-      FileOutputFormat.setOutputPath(conf, new Path(args[1]));
-      JobClient.runJob(conf);
-    }*/
     private static NumberFormat nf = new DecimalFormat("00");
-
+    private Integer numNodes;
+    private Integer numEdges;
+    private Integer numIterations;
+    private Map<String, List<String>> outlinks;
+    private Map<String, Float> pageranks;
 
     public static void main(String[] args) throws Exception {
         System.exit(ToolRunner.run(new Configuration(), new PageRankDriver(), args));
@@ -117,17 +54,20 @@ public class PageRankDriver extends Configured implements Tool {
         String lastResultPath = null;
 
         System.out.println("Constructing input file...");
-        prepareInputFile();
+        prepareInitialInputFile(); // TODO: call this before doing anything, to set up input file.
         System.out.println("Initial input file ready.");
 
         // TODO: num iterations should go in this loop
-        int numRuns = 1;
+        int numRuns = 2;
         for (int curRun = 0; curRun < numRuns; curRun++) {
             System.out.println("Executing iteration " + curRun + " of " + numRuns);
             String inPath = "/pagerank/input/iter" + nf.format(curRun);
             lastResultPath = "/pagerank/input/iter" + nf.format(curRun + 1);
 
             isCompleted = calculate(inPath, lastResultPath);
+            // TODO: after each run, rewrite the output file of the run
+            // to have it in the proper format for the next iteration
+            // UNLESS IT'S THE LAST RUN
 
             if (!isCompleted)
             {
@@ -139,17 +79,19 @@ public class PageRankDriver extends Configured implements Tool {
         return 0;
     }
 
-    private void prepareInputFile() throws Exception, IOException
+    // TODO: rewrite me so I take a map of nid:adj_list pairs, a map of
+    // nid:pagerank pairs, and a path to which to write the file.
+    // actually, we should have two methods -- one that reads the initial input file
+    // and transforms it into the right format while getting the info from it,
+    // and another that just rewrites a MR output file into a MR input file.
+    private void prepareInitialInputFile() throws Exception, IOException
     {
       Configuration config = new Configuration();
       config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
       config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
-      Integer numNodes = 0;
-      Integer numEdges = 0;
-      Integer numIterations = 0;
       String fromNodeId;
       String toNodeId;
-      Map<String, List<String>> nodes = new HashMap<String, List<String>>();
+      this.outlinks = new HashMap<String, List<String>>();
 
       BufferedReader br = null;
       try
@@ -164,14 +106,14 @@ public class PageRankDriver extends Configured implements Tool {
 
         line = br.readLine();
         // pull out num nodes and num edges
-        numNodes = Integer.parseInt(line.split("\\s+")[0]);
-        System.out.println("Number of nodes is: " + numNodes);
-        numEdges = Integer.parseInt(line.split("\\s+")[1]);
-        System.out.println("Number of edges is: " + numEdges);
+        this.numNodes = Integer.parseInt(line.split("\\s+")[0]);
+        System.out.println("Number of nodes is: " + this.numNodes);
+        this.numEdges = Integer.parseInt(line.split("\\s+")[1]);
+        System.out.println("Number of edges is: " + this.numEdges);
 
         line = br.readLine();
         // pull out num iterations to run
-        numIterations = Integer.parseInt(line.trim());
+        this.numIterations = Integer.parseInt(line.trim());
         System.out.println("Number of iterations is: " + numIterations);
 
         line = br.readLine();
@@ -181,15 +123,15 @@ public class PageRankDriver extends Configured implements Tool {
           fromNodeId = line.split("\\s+")[0].trim();
           toNodeId = line.split("\\s+")[1].trim();
 
-          if (nodes.get(fromNodeId) == null)
+          if (this.outlinks.get(fromNodeId) == null)
           { // if fromNode not in table already, add it and add the outlink
             System.out.println("Adding node " + fromNodeId + " to table.");
-            nodes.put(fromNodeId, new ArrayList<String>());
+            this.outlinks.put(fromNodeId, new ArrayList<String>());
             System.out.println("Adding link from " + fromNodeId + " to " + toNodeId + " to the table.");
-            nodes.get(fromNodeId).add(toNodeId);
+            this.outlinks.get(fromNodeId).add(toNodeId);
           } else
           { // otherwise, just add toNodeId to the outlinks of fromNodeId
-            nodes.get(fromNodeId).add(toNodeId);
+            this.outlinks.get(fromNodeId).add(toNodeId);
           }
 
           line = br.readLine();
@@ -212,10 +154,10 @@ public class PageRankDriver extends Configured implements Tool {
         }
       }
 
-      for (String nodeId : nodes.keySet())
+      for (String nodeId : this.outlinks.keySet())
       {
         System.out.println("Node " + nodeId + " has outlinks to: ");
-        for (String neighbor : nodes.get(nodeId))
+        for (String neighbor : this.outlinks.get(nodeId))
         {
           System.out.println("\t--" + neighbor);
         }
@@ -228,18 +170,18 @@ public class PageRankDriver extends Configured implements Tool {
         Path path = new Path("/pagerank/input/iter00");
         bw = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)));
         String line;
-        Float initValue = (new Float(1)) / (new Float(numNodes));
+        Float initValue = (new Float(1)) / (new Float(this.numNodes));
         // TODO: build line containing nid init_rank and outlinks
         StringBuilder sb;
 
-        for (String nodeId : nodes.keySet())
+        for (String nodeId : this.outlinks.keySet())
         {
           sb = new StringBuilder();
           sb.append(nodeId);
           sb.append(" ");
           sb.append(initValue);
           sb.append(" ");
-          for (String outlinkId : nodes.get(nodeId))
+          for (String outlinkId : this.outlinks.get(nodeId))
           {
             sb.append(outlinkId);
             sb.append(" ");
