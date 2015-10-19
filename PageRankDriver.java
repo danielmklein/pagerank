@@ -2,7 +2,7 @@
 / building and running:
 / $ HADOOP_CLASSPATH="${hadoop classpath}"
 / $ mkdir pagerank_classes
-/ $ javac -classpath ${HADOOP_CLASSPATH} -d pagerank_classes *.java
+/ $ javac -classpath $(HADOOP_CLASSPATH) -d pagerank_classes *.java
 / $ jar -cvf /home/hadoop/PageRank.jar -C pagerank_classes/ .
 /
 / $ hadoop ./PageRank.jar PageRankDriver
@@ -45,7 +45,7 @@ public class PageRankDriver extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         System.exit(ToolRunner.run(new Configuration(), new PageRankDriver(), args));
-        // TODO: we could specify the exact input file as an arg...
+        // TODO: we could maybe specify the exact input file as an arg...
     }
 
     @Override
@@ -58,8 +58,9 @@ public class PageRankDriver extends Configured implements Tool {
         System.out.println("Initial input file ready.");
 
         // TODO: num iterations should go in this loop
+        // numRuns should become this.numIterations
         int numRuns = 2;
-        for (int curRun = 0; curRun < numRuns; curRun++) {
+        for (int curRun = 1; curRun <= numRuns; curRun++) {
             System.out.println("Executing iteration " + curRun + " of " + numRuns);
             String inPath = "/pagerank/input/iter" + nf.format(curRun);
             lastResultPath = "/pagerank/input/iter" + nf.format(curRun + 1);
@@ -73,6 +74,11 @@ public class PageRankDriver extends Configured implements Tool {
             {
               System.out.println("something broke.");
               return 1;
+            }
+
+            if (curRun < numRuns)
+            {
+              transformOutputFile(lastResultPath);
             }
         }
 
@@ -101,7 +107,6 @@ public class PageRankDriver extends Configured implements Tool {
         FileSystem fs = FileSystem.get(config);
         Path path = new Path("/pagerank/graph.txt");
         br = new BufferedReader(new InputStreamReader(fs.open(path)));
-
         String line;
 
         line = br.readLine();
@@ -133,7 +138,6 @@ public class PageRankDriver extends Configured implements Tool {
           { // otherwise, just add toNodeId to the outlinks of fromNodeId
             this.outlinks.get(fromNodeId).add(toNodeId);
           }
-
           line = br.readLine();
         }
       }
@@ -211,26 +215,35 @@ public class PageRankDriver extends Configured implements Tool {
       // TODO: might need to return the num nodes, num edges, and num iterations??
     }
 
+    private void transformOutputFile(String outputDir)
+    {
+        // TODO: read in the new pagerank value for each node from the output file,
+        // then store them in the table (this.pageranks).
+        // then use that table and the outlinks table to rewrite a new input file for the next iteration.
+
+        // NOTE: filename is part-r-00000, if i'm interested in hardcoding it. :)
+    }
+
     private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
     {
-      Configuration conf = new Configuration();
+        Configuration conf = new Configuration();
 
-      Job pageRank = Job.getInstance(conf, "PageRank");
-      pageRank.setJarByClass(PageRankDriver.class);
+        Job pageRank = Job.getInstance(conf, "PageRank");
+        pageRank.setJarByClass(PageRankDriver.class);
 
-      pageRank.setInputFormatClass(NLineInputFormat.class);
-      pageRank.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 1);
-      pageRank.setOutputKeyClass(Text.class);
-      pageRank.setOutputValueClass(FloatWritable.class);
-      pageRank.setOutputFormatClass(TextOutputFormat.class);
+        pageRank.setInputFormatClass(NLineInputFormat.class);
+        pageRank.getConfiguration().setInt("mapreduce.input.lineinputformat.linespermap", 1);
+        pageRank.setOutputKeyClass(Text.class);
+        pageRank.setOutputValueClass(FloatWritable.class);
+        pageRank.setOutputFormatClass(TextOutputFormat.class);
 
-      FileInputFormat.setInputPaths(pageRank, new Path(inputPath));
-      FileOutputFormat.setOutputPath(pageRank, new Path(outputPath));
+        FileInputFormat.setInputPaths(pageRank, new Path(inputPath));
+        FileOutputFormat.setOutputPath(pageRank, new Path(outputPath));
 
-      pageRank.setMapperClass(PageRankMapper.class);
-      pageRank.setReducerClass(PageRankReduce.class);
+        pageRank.setMapperClass(PageRankMapper.class);
+        pageRank.setReducerClass(PageRankReduce.class);
 
-      return pageRank.waitForCompletion(true);
-  }
+        return pageRank.waitForCompletion(true);
+    }
 
 }
