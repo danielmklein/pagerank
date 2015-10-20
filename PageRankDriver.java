@@ -53,15 +53,15 @@ public class PageRankDriver extends Configured implements Tool {
         boolean isCompleted;
         String lastResultPath = null;
 
-        System.out.println("Constructing input file...");
+        System.out.println("DRIVER: Constructing input file...");
         prepareInitialInputFile("/pagerank/graph.txt"); // TODO: call this before doing anything, to set up input file.
-        System.out.println("Initial input file ready.");
+        System.out.println("DRIVER: Initial input file ready.");
 
         // TODO: num iterations should go in this loop
         // numRuns should become this.numIterations
         int numRuns = 2;
         for (int curRun = 1; curRun <= numRuns; curRun++) {
-            System.out.println("Executing iteration " + curRun + " of " + numRuns);
+            System.out.println("DRIVER: Executing iteration " + curRun + " of " + numRuns);
             String inPath = "/pagerank/input/iter" + nf.format(curRun);
             lastResultPath = "/pagerank/input/iter" + nf.format(curRun + 1);
 
@@ -72,7 +72,7 @@ public class PageRankDriver extends Configured implements Tool {
 
             if (!isCompleted)
             {
-              System.out.println("something broke.");
+              System.out.println("DRIVER: something broke.");
               return 1;
             }
 
@@ -113,14 +113,14 @@ public class PageRankDriver extends Configured implements Tool {
         line = br.readLine();
         // pull out num nodes and num edges
         this.numNodes = Integer.parseInt(line.split("\\s+")[0]);
-        System.out.println("Number of nodes is: " + this.numNodes);
+        System.out.println("DRIVER: Number of nodes is: " + this.numNodes);
         this.numEdges = Integer.parseInt(line.split("\\s+")[1]);
-        System.out.println("Number of edges is: " + this.numEdges);
+        System.out.println("DRIVER: Number of edges is: " + this.numEdges);
 
         line = br.readLine();
         // pull out num iterations to run
         this.numIterations = Integer.parseInt(line.trim());
-        System.out.println("Number of iterations is: " + numIterations);
+        System.out.println("DRIVER: Number of iterations is: " + numIterations);
 
         line = br.readLine();
         while (line != null)
@@ -131,9 +131,9 @@ public class PageRankDriver extends Configured implements Tool {
 
           if (this.outlinks.get(fromNodeId) == null)
           { // if fromNode not in table already, add it and add the outlink
-            System.out.println("Adding node " + fromNodeId + " to table.");
+            System.out.println("DRIVER: Adding node " + fromNodeId + " to table.");
             this.outlinks.put(fromNodeId, new ArrayList<String>());
-            System.out.println("Adding link from " + fromNodeId + " to " + toNodeId + " to the table.");
+            System.out.println("DRIVER: Adding link from " + fromNodeId + " to " + toNodeId + " to the table.");
             this.outlinks.get(fromNodeId).add(toNodeId);
           } else
           { // otherwise, just add toNodeId to the outlinks of fromNodeId
@@ -162,7 +162,7 @@ public class PageRankDriver extends Configured implements Tool {
 
       for (String nodeId : this.outlinks.keySet())
       {
-        System.out.println("Node " + nodeId + " has outlinks to: ");
+        System.out.println("DRIVER: Node " + nodeId + " has outlinks to: ");
         for (String neighbor : this.outlinks.get(nodeId))
         {
           System.out.println("\t--" + neighbor);
@@ -194,7 +194,7 @@ public class PageRankDriver extends Configured implements Tool {
             sb.append(" ");
           }
           sb.append("\n");
-          System.out.println("Writing line: " + sb.toString());
+          System.out.println("DRIVER: Writing line: " + sb.toString());
           bw.write(sb.toString());
         }
 
@@ -223,6 +223,8 @@ public class PageRankDriver extends Configured implements Tool {
         // then use that table and the outlinks table to rewrite a new input file for the next iteration.
 
         // NOTE: filename is part-r-00000, if i'm interested in hardcoding it. :)
+
+        System.out.println("DRIVER: rewriting output from previous iteration to include graph structure.");
         Configuration config = new Configuration();
         config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
         config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
@@ -246,7 +248,7 @@ public class PageRankDriver extends Configured implements Tool {
             // get the new pagerank value for each node and save to table
             nid = line.split("\\s+")[0].trim();
             newValue = Float.parseFloat(line.split("\\s+")[1]);
-            System.out.println("new pagerank value for node " + nid + " is " + newValue);
+            System.out.println("DRIVER: new pagerank value for node " + nid + " is " + newValue);
             this.pageranks.put(nid, newValue);
 
             line = br.readLine();
@@ -292,7 +294,7 @@ public class PageRankDriver extends Configured implements Tool {
               sb.append(" ");
             }
             sb.append("\n");
-            System.out.println("Writing line: " + sb.toString());
+            System.out.println("DRIVER: Writing line: " + sb.toString());
             bw.write(sb.toString());
           }
 
