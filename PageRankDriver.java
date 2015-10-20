@@ -45,31 +45,24 @@ public class PageRankDriver extends Configured implements Tool {
 
     public static void main(String[] args) throws Exception {
         System.exit(ToolRunner.run(new Configuration(), new PageRankDriver(), args));
-        // TODO: we could maybe specify the exact input file as an arg...
     }
 
     @Override
     public int run(String[] args) throws Exception {
         boolean isCompleted;
         String lastResultPath = null;
+        String inputFilePath = "/pagerank/graph.txt"; // TODO: change this to get args[0] so we can spec input file as arg
 
         System.out.println("DRIVER: Constructing input file...");
-        prepareInitialInputFile("/pagerank/graph.txt"); // TODO: call this before doing anything, to set up input file.
+        prepareInitialInputFile(inputFilePath); // TODO: call this before doing anything, to set up input file.
         System.out.println("DRIVER: Initial input file ready.");
 
-        // TODO: num iterations should go in this loop
-        // numRuns should become this.numIterations
-        int numRuns = 2;
-        for (int curRun = 1; curRun <= numRuns; curRun++) {
-            System.out.println("DRIVER: Executing iteration " + curRun + " of " + numRuns);
+        for (int curRun = 1; curRun <= this.numIterations; curRun++) {
+            System.out.println("DRIVER: Executing iteration " + curRun + " of " + this.numIterations);
             String inPath = "/pagerank/input/iter" + nf.format(curRun);
             lastResultPath = "/pagerank/input/iter" + nf.format(curRun + 1);
 
             isCompleted = calculate(inPath, lastResultPath);
-            // TODO: after each run, rewrite the output file of the run
-            // to have it in the proper format for the next iteration
-            // UNLESS IT'S THE LAST RUN
-
             if (!isCompleted)
             {
               System.out.println("DRIVER: something broke.");
@@ -81,15 +74,13 @@ public class PageRankDriver extends Configured implements Tool {
               transformOutputFile(lastResultPath);
             }
         }
+        //TODO: output final values
 
         return 0;
     }
 
-    // TODO: rewrite me so I take a map of nid:adj_list pairs, a map of
-    // nid:pagerank pairs, and a path to which to write the file.
-    // actually, we should have two methods -- one that reads the initial input file
-    // and transforms it into the right format while getting the info from it,
-    // and another that just rewrites a MR output file into a MR input file.
+    // read the initial input file, save the graph structure, and rewrite it
+    // into the first input file for map reduce
     private void prepareInitialInputFile(String inputPath) throws Exception, IOException
     {
       Configuration config = new Configuration();
@@ -103,8 +94,6 @@ public class PageRankDriver extends Configured implements Tool {
       BufferedReader br = null;
       try
       {
-        // TODO: read /pagerank/graph.txt, construct hashmap of nid:node pairs,
-        // then write it to /pagerank/input/iter01
         FileSystem fs = FileSystem.get(config);
         Path path = new Path(inputPath);
         br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -137,6 +126,7 @@ public class PageRankDriver extends Configured implements Tool {
             this.outlinks.get(fromNodeId).add(toNodeId);
           } else
           { // otherwise, just add toNodeId to the outlinks of fromNodeId
+            System.out.println("DRIVER: Adding link from " + fromNodeId + " to " + toNodeId + " to the table.");
             this.outlinks.get(fromNodeId).add(toNodeId);
           }
 
@@ -314,6 +304,7 @@ public class PageRankDriver extends Configured implements Tool {
             //
           }
         }
+        System.out.println("DRIVER: finished rewriting previous iteration's output.");
     }
 
     private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
