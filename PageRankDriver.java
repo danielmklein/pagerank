@@ -54,7 +54,7 @@ public class PageRankDriver extends Configured implements Tool {
         String lastResultPath = null;
 
         System.out.println("Constructing input file...");
-        prepareInitialInputFile(); // TODO: call this before doing anything, to set up input file.
+        prepareInitialInputFile("/pagerank/graph.txt"); // TODO: call this before doing anything, to set up input file.
         System.out.println("Initial input file ready.");
 
         // TODO: num iterations should go in this loop
@@ -90,7 +90,7 @@ public class PageRankDriver extends Configured implements Tool {
     // actually, we should have two methods -- one that reads the initial input file
     // and transforms it into the right format while getting the info from it,
     // and another that just rewrites a MR output file into a MR input file.
-    private void prepareInitialInputFile() throws Exception, IOException
+    private void prepareInitialInputFile(String inputPath) throws Exception, IOException
     {
       Configuration config = new Configuration();
       config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
@@ -98,6 +98,7 @@ public class PageRankDriver extends Configured implements Tool {
       String fromNodeId;
       String toNodeId;
       this.outlinks = new HashMap<String, List<String>>();
+      this.pageranks = new HashMap<String, Float>();
 
       BufferedReader br = null;
       try
@@ -105,7 +106,7 @@ public class PageRankDriver extends Configured implements Tool {
         // TODO: read /pagerank/graph.txt, construct hashmap of nid:node pairs,
         // then write it to /pagerank/input/iter00
         FileSystem fs = FileSystem.get(config);
-        Path path = new Path("/pagerank/graph.txt");
+        Path path = new Path(inputPath);
         br = new BufferedReader(new InputStreamReader(fs.open(path)));
         String line;
 
@@ -138,6 +139,7 @@ public class PageRankDriver extends Configured implements Tool {
           { // otherwise, just add toNodeId to the outlinks of fromNodeId
             this.outlinks.get(fromNodeId).add(toNodeId);
           }
+
           line = br.readLine();
         }
       }
@@ -180,6 +182,7 @@ public class PageRankDriver extends Configured implements Tool {
 
         for (String nodeId : this.outlinks.keySet())
         {
+          this.pageranks.put(nodeId, initValue);
           sb = new StringBuilder();
           sb.append(nodeId);
           sb.append(" ");
@@ -211,8 +214,6 @@ public class PageRankDriver extends Configured implements Tool {
           //
         }
       }
-
-      // TODO: might need to return the num nodes, num edges, and num iterations??
     }
 
     private void transformOutputFile(String outputDir)
@@ -222,6 +223,95 @@ public class PageRankDriver extends Configured implements Tool {
         // then use that table and the outlinks table to rewrite a new input file for the next iteration.
 
         // NOTE: filename is part-r-00000, if i'm interested in hardcoding it. :)
+        Configuration config = new Configuration();
+        config.addResource(new Path("/HADOOP_HOME/conf/core-site.xml"));
+        config.addResource(new Path("/HADOOP_HOME/conf/hdfs-site.xml"));
+
+        BufferedReader br = null;
+        String inputPath = outputDir + "/part-r-00000";
+
+        String nid;
+        Float newValue;
+        try
+        {
+          // then write it to /pagerank/input/iter00
+          FileSystem fs = FileSystem.get(config);
+          Path path = new Path(inputPath);
+          br = new BufferedReader(new InputStreamReader(fs.open(path)));
+          String line;
+
+          line = br.readLine();
+          while (line != null)
+          {
+            // get the new pagerank value for each node and save to table
+            nid = line.split("\\s+")[0].trim();
+            newValue = Float.parseFloat(line.split("\\s+")[1]);
+            System.out.println("new pagerank value for node " + nid + " is " + newValue);
+            this.pageranks.put(nid, newValue);
+
+            line = br.readLine();
+          }
+        }
+        catch (Exception e)
+        {
+          //
+        } finally
+        {
+          try
+          {
+            if (br != null)
+            {
+              br.close();
+            }
+          } catch (IOException e)
+          {
+            //
+          }
+        }
+
+        // TODO: write the stuff from both tables back to the same output file.
+        BufferedWriter bw = null;
+        try
+        {
+          FileSystem fs = FileSystem.get(config);
+          Path path = new Path(inputPath);
+          bw = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)));
+          String line;
+          StringBuilder sb;
+
+          for (String nodeId : this.outlinks.keySet())
+          {
+            sb = new StringBuilder();
+            sb.append(nodeId);
+            sb.append(" ");
+            sb.append(this.pageranks.get(nodeId));
+            sb.append(" ");
+            for (String outlinkId : this.outlinks.get(nodeId))
+            {
+              sb.append(outlinkId);
+              sb.append(" ");
+            }
+            sb.append("\n");
+            System.out.println("Writing line: " + sb.toString());
+            bw.write(sb.toString());
+          }
+
+        } catch (Exception e)
+        {
+          //
+        } finally
+        {
+          try
+          {
+            if (bw != null)
+            {
+              bw.close();
+            }
+          } catch (IOException e)
+          {
+            //
+          }
+        }
     }
 
     private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
