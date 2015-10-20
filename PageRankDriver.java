@@ -104,7 +104,7 @@ public class PageRankDriver extends Configured implements Tool {
       try
       {
         // TODO: read /pagerank/graph.txt, construct hashmap of nid:node pairs,
-        // then write it to /pagerank/input/iter00
+        // then write it to /pagerank/input/iter01
         FileSystem fs = FileSystem.get(config);
         Path path = new Path(inputPath);
         br = new BufferedReader(new InputStreamReader(fs.open(path)));
@@ -173,7 +173,7 @@ public class PageRankDriver extends Configured implements Tool {
       try
       {
         FileSystem fs = FileSystem.get(config);
-        Path path = new Path("/pagerank/input/iter00");
+        Path path = new Path("/pagerank/input/iter01");
         bw = new BufferedWriter(new OutputStreamWriter(fs.create(path, true)));
         String line;
         Float initValue = (new Float(1)) / (new Float(this.numNodes));
