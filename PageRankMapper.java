@@ -20,7 +20,6 @@ public class PageRankMapper extends Mapper<LongWritable, Text, Text, FloatWritab
     Float portion = initPageRank / (new Float(fields.size() - 2));
 
     System.out.println("MAPPER: node " + curNid + " has current value " + initPageRank);
-    System.out.println("MAPPER: node " + curNid + " has neighbors: ");
 
     for (String outlinkId : fields.subList(2, fields.size()))
     {
