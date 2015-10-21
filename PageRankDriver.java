@@ -67,7 +67,7 @@ public class PageRankDriver extends Configured implements Tool {
               return 1;
             }
 
-            if (curRun < this.numiterations)
+            if (curRun < this.numIterations)
             {
               transformOutputFile(lastResultPath);
             }
