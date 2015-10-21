@@ -67,7 +67,7 @@ public class PageRankDriver extends Configured implements Tool {
               return 1;
             }
 
-            if (curRun < numRuns)
+            if (curRun < this.numiterations)
             {
               transformOutputFile(lastResultPath);
             }
@@ -157,7 +157,7 @@ public class PageRankDriver extends Configured implements Tool {
       }
       // TODO: end test output loop
 
-      rewriteOutputPath("/pagerank/input/iter01");
+      rewriteOutput("/pagerank/input/iter01");
     }
 
     private void transformOutputFile(String outputDir)
@@ -200,11 +200,13 @@ public class PageRankDriver extends Configured implements Tool {
           } catch (IOException e) {}
         }
 
-        rewriteOutputPath(outputPath);
+        rewriteOutput(outputPath);
     }
 
     private void rewriteOutput(String outputPath)
     {
+      Configuration config = createConfig();
+
       // write the stuff from both tables back to the same output file.
       BufferedWriter bw = null;
       try
