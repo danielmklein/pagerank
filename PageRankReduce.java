@@ -8,8 +8,9 @@ import org.apache.hadoop.mapreduce.Reducer;
 public class PageRankReduce extends Reducer<Text, FloatWritable, Text, FloatWritable> {
 
   @Override
-  public void reduce(Text key, Iterable<FloatWritable> values,
-                     Context context) throws IOException, InterruptedException {
+  public void reduce(Text key, Iterable<FloatWritable> values, Context context)
+                    throws IOException, InterruptedException
+  {
     System.out.print("REDUCER: found following portions for node " + key + ":");
     Float sum = new Float(0);
     for (FloatWritable value : values)

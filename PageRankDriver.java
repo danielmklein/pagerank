@@ -1,11 +1,11 @@
 /*
 / building and running:
-/ $ HADOOP_CLASSPATH="${hadoop classpath}"
+/ $ HADOOP_CLASSPATH="$(hadoop classpath)"
 / $ mkdir pagerank_classes
-/ $ javac -classpath $(HADOOP_CLASSPATH) -d pagerank_classes *.java
+/ $ javac -classpath ${HADOOP_CLASSPATH} -d pagerank_classes *.java
 / $ jar -cvf /home/hadoop/PageRank.jar -C pagerank_classes/ .
 /
-/ $ hadoop ./PageRank.jar PageRankDriver /pagerank/graph.txt
+/ $ hadoop jar ./PageRank.jar PageRankDriver /pagerank/graph.txt
 **/
 
 import java.io.IOException;
@@ -46,33 +46,32 @@ public class PageRankDriver extends Configured implements Tool {
 
     @Override
     public int run(String[] args) throws Exception {
+        String inputFilePath = args[0];
         boolean isCompleted;
         String lastResultPath = null;
-        //String inputFilePath = "/pagerank/graph.txt"; // TODO: change this to get args[0] so we can spec input file as arg
-        String inputFilePath = args[0];
-
         System.out.println("DRIVER: Constructing initial input file...");
-        prepareInitialInputFile(inputFilePath); // TODO: call this before doing anything, to set up input file.
+        // prepareInitialInputFile() takes graph.txt (or other input file) and rewrites it in
+        // the format that my mapper is expecting.
+        prepareInitialInputFile(inputFilePath);
         System.out.println("DRIVER: Initial input file complete.");
 
         for (int curRun = 1; curRun <= this.numIterations; curRun++) {
             System.out.println("DRIVER: Executing iteration " + curRun + " of " + this.numIterations);
             String inPath = "/pagerank/input/iter" + nf.format(curRun);
             lastResultPath = "/pagerank/input/iter" + nf.format(curRun + 1);
-
             isCompleted = calculate(inPath, lastResultPath);
             if (!isCompleted)
             {
-              System.out.println("DRIVER: something broke.");
+              System.out.println("DRIVER: something went wrong with the MapReduce job.");
               return 1;
             }
-
             if (curRun < this.numIterations)
             {
+              // transformOutputFile() takes the MR job output and rewrites it
+              // to the format that my mapper is expecting.
               transformOutputFile(lastResultPath);
             }
         }
-        //TODO: output final values
 
         return 0;
     }
@@ -85,8 +84,10 @@ public class PageRankDriver extends Configured implements Tool {
       return config;
     }
 
-    // read the initial input file, save the graph structure, and rewrite it
-    // into the first input file for map reduce
+    /*
+    // Read the initial input file, save the graph structure, and rewrite it
+    // into the first input file for map reduce.
+    */
     private void prepareInitialInputFile(String initInputPath) throws Exception, IOException
     {
       Configuration config = createConfig();
@@ -94,29 +95,22 @@ public class PageRankDriver extends Configured implements Tool {
       String toNodeId;
       this.outlinks = new HashMap<String, List<String>>();
       this.pageranks = new HashMap<String, Float>();
-
       FileSystem fs = FileSystem.get(config);
       Path path = new Path(initInputPath);
-
       BufferedReader br = null;
       try
       {
         br = new BufferedReader(new InputStreamReader(fs.open(path)));
-
         String line = br.readLine();
-        // pull out num nodes and num edges
         this.numNodes = Integer.parseInt(line.split("\\s+")[0]);
         System.out.println("DRIVER: Number of nodes in graph: " + this.numNodes);
         this.numEdges = Integer.parseInt(line.split("\\s+")[1]);
         System.out.println("DRIVER: Number of edges in graph: " + this.numEdges);
-
         line = br.readLine();
-        // pull out num iterations to run
         this.numIterations = Integer.parseInt(line.trim());
         System.out.println("DRIVER: Number of iterations to run: " + numIterations);
-
+        // initValue is the seed pagerank that each node gets
         Float initValue = (new Float(1)) / (new Float(this.numNodes));
-
         System.out.println("DRIVER: Constructing graph outlink table...");
         line = br.readLine();
         while (line != null)
@@ -124,18 +118,16 @@ public class PageRankDriver extends Configured implements Tool {
           // parse out the outlink and add it to the proper node
           fromNodeId = line.split("\\s+")[0].trim();
           toNodeId = line.split("\\s+")[1].trim();
-
           if (this.outlinks.get(fromNodeId) == null)
           {
             // if fromNode not in outlinks table already, add it
-            // and put a pagerank in the pageranks table for it
+            // and put an initial pagerank in the pageranks table for it
             System.out.println("DRIVER: Adding node " + fromNodeId + " to table.");
             this.outlinks.put(fromNodeId, new ArrayList<String>());
             this.pageranks.put(fromNodeId, initValue);
           }
           System.out.println("DRIVER: Adding link " + fromNodeId + " -> " + toNodeId);
           this.outlinks.get(fromNodeId).add(toNodeId);
-
           line = br.readLine();
         }
       } catch (Exception e)
@@ -147,37 +139,24 @@ public class PageRankDriver extends Configured implements Tool {
         } catch (IOException e) {}
       }
       System.out.println("DRIVER: Graph outlink table complete.");
-
-
-      // TODO: this loop is really just test output
-      for (String nodeId : this.outlinks.keySet())
-      {
-        System.out.print("DRIVER: Node " + nodeId + " has outlinks to: ");
-        for (String neighbor : this.outlinks.get(nodeId))
-        {
-          System.out.print(neighbor + " ");
-        }
-        System.out.print("\n");
-      }
-      // TODO: end test output loop
-
       System.out.println("DRIVER: Writing initial input file for MapReduce.");
+      // rewriteOutput() performs the actual writing of the graph structure
+      // with pagerank values to the file.
       rewriteOutput("/pagerank/input/iter01");
-      System.out.println("DRIVER: Initial input file complete.");
     }
 
+    /*
+    // Read in the new pagerank value for each node from the output file,
+    // then store each in the pagerank table (this.pageranks).
+    // Then use that table and the outlinks table to rewrite a new input
+    // file for the next iteration.
+    */
     private void transformOutputFile(String outputDir)
     {
-        // read in the new pagerank value for each node from the output file,
-        // then store them in the table (this.pageranks).
-        // then use that table and the outlinks table to rewrite a new input file for the next iteration.
-        Configuration config = createConfig();
-
         System.out.println("DRIVER: rewriting output from previous iteration to include graph structure.");
-
+        Configuration config = createConfig();
         BufferedReader br = null;
         String outputPath = outputDir + "/part-r-00000";
-
         String nid;
         Float newValue;
         try
@@ -185,9 +164,7 @@ public class PageRankDriver extends Configured implements Tool {
           FileSystem fs = FileSystem.get(config);
           Path path = new Path(outputPath);
           br = new BufferedReader(new InputStreamReader(fs.open(path)));
-          String line;
-
-          line = br.readLine();
+          String line = br.readLine();
           while (line != null)
           {
             // get the new pagerank value for each node and save to table
@@ -205,15 +182,14 @@ public class PageRankDriver extends Configured implements Tool {
             if (br != null) br.close();
           } catch (IOException e) {}
         }
-
         rewriteOutput(outputPath);
     }
 
     private void rewriteOutput(String outputPath)
     {
       Configuration config = createConfig();
-
-      // write the stuff from both tables back to the same output file.
+      // write everything from the outlinks table and pageranks tables
+      // back to the same output file from which we read the pageranks.
       BufferedWriter bw = null;
       try
       {
@@ -226,14 +202,11 @@ public class PageRankDriver extends Configured implements Tool {
         for (String nodeId : this.outlinks.keySet())
         {
           sb = new StringBuilder();
-          sb.append(nodeId);
-          sb.append(" ");
-          sb.append(this.pageranks.get(nodeId));
-          sb.append(" ");
+          sb.append(nodeId).append(" ");
+          sb.append(this.pageranks.get(nodeId)).append(" ");
           for (String outlinkId : this.outlinks.get(nodeId))
           {
-            sb.append(outlinkId);
-            sb.append(" ");
+            sb.append(outlinkId).append(" ");
           }
           System.out.println("DRIVER: Writing line: " + sb.toString() + " to file " + outputPath);
           sb.append("\n");
@@ -250,6 +223,9 @@ public class PageRankDriver extends Configured implements Tool {
       System.out.println("DRIVER: finished rewriting previous iteration's output.");
     }
 
+    /*
+    // This method actually sets up and runs the mapreduce job.
+    */
     private boolean calculate(String inputPath, String outputPath) throws IOException, ClassNotFoundException, InterruptedException
     {
         Configuration conf = createConfig();
@@ -267,5 +243,4 @@ public class PageRankDriver extends Configured implements Tool {
 
         return pageRank.waitForCompletion(true);
     }
-
 }
